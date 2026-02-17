@@ -1,0 +1,155 @@
+
+// Desarrollado por: Miguel Caballero
+// Contribución de: Estudiantes de la Especialización en Power Query y Lenguaje M, Edición Julio-2022.
+let
+    Funcion = 
+        ( 
+            Texto,
+            optional #"Mantener Números", 
+            optional #"Mantener Acentos Generales",
+            optional #"Mantener Acentos Agudos",
+            optional #"Mantener Diéresis",
+            optional #"Mantener Acentos Graves",
+            optional #"Mantener Signos de Puntuacion",
+            optional #"Mantener Caracteres No Imprimibles"  
+        ) =>
+        let 
+
+            CaracteresEnLista = Text.ToList ( Texto ) ,
+
+            CaracteresRemover = 
+            List.RemoveMatchingItems ( 
+                { Character.FromNumber ( 1 ) .. "Ω"},
+                { "A" .."Z", "Ñ", " " } & Mantener,
+                Comparer.OrdinalIgnoreCase
+            ) ,
+
+            RemoverCaracteresEspeciales = 
+            List.RemoveItems (
+                CaracteresEnLista,
+                CaracteresRemover
+            ),
+
+            VolverTexto = 
+            Text.Combine ( RemoverCaracteresEspeciales, "" ),
+
+            Mantener = 
+            List.Combine (
+                Table.SelectRows (
+                    Table.FromColumns (
+                        {
+                            { 
+                                { "0" .. "9" },
+                                { "à" .. "ä", "è" .. "ë", "ì" .. "ï",  "ò" .. "ö", "ù" .. "ü" },
+                                { "á","é", "í", "ó", "ú" },
+                                {"ä", "ë", "ï", "ö", "ü"},
+                                { "à", "è", "ì", "ò", "ú" },
+                                { ".", ",", ";", ":", "¿", "?", "(", ")", "[", "]",  """", "¡", "!"  },
+                                { Character.FromNumber (1) .. Character.FromNumber (31) } 
+                            },
+                            {
+                                #"Mantener Números",
+                                #"Mantener Acentos Generales",
+                                #"Mantener Acentos Agudos",
+                                #"Mantener Diéresis",
+                                #"Mantener Acentos Graves",
+                                #"Mantener Signos de Puntuacion",
+                                #"Mantener Caracteres No Imprimibles"
+                            }
+                        }
+                    ),
+                    each [Column2] = true
+                )[Column1]
+            )
+        in
+            VolverTexto,
+
+    Documentacion = 
+    [
+        Documentation.Name = 
+        "Text.RemoveSpecialCharacters",
+
+        Documentation.LongDescription = 
+        "Retorna el texto proporcionado removiendo todo carácter especial, por ejemplo:
+        @, /, (, +, ≡, <, #, ;, %, ], etc. E incluso tildes y números, sin embargo, cuenta con 
+        opciones para decidir cuáles caracteres mantener, por ejemplo: mantener tildes agudasy/o graves,
+        diéresis y hasta signos de puntuación y números.",
+
+        Documentation.Examples = 
+        {
+            [
+                Description = 
+                "Remover tildes y cualquier carácter especial en el texto" ,
+
+                Code = 
+                "Text.RemoveSpecialCharacters ( ""En 2022 áàÚ#¡©Power Query Paso Paso! <Muy Pronto.>¶-/|¬ìÄ"" )",
+
+                Result = 
+                "En  Power Query Paso Paso Muy Pronto"
+            ],
+            [
+                Description = 
+                "Remover tildes y cualquier carácter especial, pero mantener números en el texto" ,
+
+                Code = 
+                "Text.RemoveSpecialCharacters ( ""En 2022 áàÚ#¡©Power Query Paso Paso! <Muy Pronto.>¶-/|¬ìÄ"", true )",
+
+                Result = 
+                "En 2022 Power Query Paso Paso Muy Pronto" 
+            ],
+                        
+            [
+                Description = 
+                "Remover cualquier carácter especial, pero mantener números y tildes" ,
+
+                Code = 
+                "Text.RemoveSpecialCharacters ( ""La Nicaragüense Sofía adquirió el libro: |ADN de Power Query| en *2019* "", true, false, true, true )",
+
+                Result = 
+                "La Nicaragüense Sofía adquirió el libro ADN de Power Query en 2019" 
+            ],
+
+            [
+                Description = 
+                "Remover sólo número" ,
+
+                Code = 
+                "Text.RemoveSpecialCharacters ( 9I1n2f3o4r5m6a7c8i9ón1, false, true )",
+
+                Result = 
+                "Información" 
+            ]
+
+
+        },
+        
+        Documentation.Category = 
+        "Text",
+
+        Documentation.Source = 
+        "Local",
+
+        Documentation.Version = " 1.0 ",
+
+        Documentation.Author = 
+        "Miguel Caballero & Fabian Torres de: www.ExcelFreeBlog.Com 
+        para PowerQuery.Zone con contribución de los estudiantes de
+        la Especialización en Power Query y Lenguaje M, edición Julio 2022"        
+    ],      
+
+
+    TipoConDucmentacion =
+    type function 
+    ( 
+        Texto as text,
+        optional #"Mantener Números" as logical, 
+        optional #"Mantener Acentos Generales" as logical,
+        optional #"Mantener Acentos Agudos" as logical,
+        optional #"Mantener Diéresis" as logical,
+        optional #"Mantener Acentos Graves" as logical,
+        optional #"Mantener Signos de Puntuacion" as logical,
+        optional #"Mantener Caracteres No Imprimibles" as logical    
+    ) as text meta Documentacion   
+
+in
+    Value.ReplaceType ( Funcion, TipoConDucmentacion )

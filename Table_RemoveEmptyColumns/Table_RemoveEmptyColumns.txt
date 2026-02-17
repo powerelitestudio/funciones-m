@@ -1,0 +1,184 @@
+
+// Desarrollado por: Miguel Caballero: https://www.excelfreeblog.com/
+let
+    Funcion = 
+    ( Tabla as table, optional Metodo as number ) as table =>
+    let
+
+        RemoveEmptyColumnsAlgorithm_Abort = 1,
+        RemoveEmptyColumnsAlgorithm_Transponse = 2,
+        RemoveEmptyColumnsAlgorithm_BaseOnColumnNames = 3,
+
+        ListaConNombresDeColumnas = 
+        Table.ColumnNames ( Tabla ),
+
+        #"Remover Columnas Vacías Según Método" = 
+        if
+            Metodo = 
+            RemoveEmptyColumnsAlgorithm_Abort 
+                or Metodo = null
+                or Metodo >= 4
+                or Metodo <= 0
+        then
+            let
+                ListaDeColumnasNoVacias = 
+                List.Select (
+                    ListaConNombresDeColumnas,
+                    each
+                    not
+                    List.IsEmpty (
+                        List.Skip ( 
+                            Table.Column ( Tabla, _ ),
+                            ( x ) =>
+                            x is null or x = ""
+                        )
+                    )
+                ),
+
+                SeleccionDeColumnasNoVacias = 
+                Table.SelectColumns (
+                    Tabla,
+                    ListaDeColumnasNoVacias
+                )
+            in
+                SeleccionDeColumnasNoVacias
+        else if
+            Metodo = 
+            RemoveEmptyColumnsAlgorithm_Transponse
+        then
+            let 
+                Transponer = 
+                Table.Transpose ( Tabla ),
+
+                EliminarFilasVcias = 
+                Table.SelectRows ( 
+                    Transponer, 
+                    each 
+                    not 
+                    List.IsEmpty ( 
+                        List.RemoveMatchingItems ( 
+                            Record.FieldValues ( _ ), 
+                            { "", null }
+                        )
+                    )
+                ),
+
+                TransponerDeRegreso = 
+                Table.Transpose ( EliminarFilasVcias )
+                
+            in
+                TransponerDeRegreso
+        else
+            let
+                ListaDeColumnasNoVaciasSegunNombre = 
+                List.Select ( 
+                    ListaConNombresDeColumnas, 
+                    each
+                    not 
+                    Text.Contains ( _, "Column", Comparer.OrdinalIgnoreCase ) 
+                ),
+
+                SeleccionDeColumnasNoVacias = 
+                Table.SelectColumns (
+                    Tabla,
+                    ListaDeColumnasNoVaciasSegunNombre
+                )            
+            in
+                SeleccionDeColumnasNoVacias
+
+    in
+        #"Remover Columnas Vacías Según Método",
+
+    Documentacion =
+    type function 
+    ( 
+        Tabla as table, 
+        optional Metodo as number
+    ) as list meta
+    
+    [
+        Documentation.Name = 
+        "Table.RemoveEmptyColumns",
+
+        Documentation.LongDescription = 
+        "Remueve dinámicamente las columnas vacías de una tabla,
+        garantizando su eliminación sin importar ubicaciones 
+        y cantidad de columnas después de actualizar, adicionalmente,
+        está  dotada de tres métodos que según el caso arrojará el
+        resultado en un tiempo adecuado.
+
+        Los tres métodos son: (1) RemoveEmptyColumnsAlgorithm_Abort, 
+        que se señala en el segundo argumento de la función con un 1,
+        recomendable para tablas con millones de filas. Este es el
+        valor por defecto.
+
+        (2) RemoveEmptyColumnsAlgorithm_Transponse, que se señala en
+        segundo argumento con un 2, recomendable para pequeñas cantidades
+        de datos, menor a 100 mil registros dependiendo de los recursos
+        de cómputo locales
+
+        (3) RemoveEmptyColumnsAlgorithm_BaseOnColumnNames, que se señala
+        en el segundo argumento con el número 3; utilizar sólo si
+        hay garantía que las columnas vacías tiene el nombre genérico
+        ColumnX, donde X es cualquier número o letra, y las demás
+        columnas tiene nombre definidos (No recomendado). 
+
+        Creado por: | EXCELFREEBLOG.COM | para POWERQUERY.ZONE,
+        Miguel Caballero.",
+
+        Documentation.Examples = 
+        {
+            [
+                Description = 
+                "Remover las columnas vacías de la tabla almacenada en la variale 
+                Datos con el método por defecto: 
+                Table.FromRecords ( { [ Nombre = ""Mónica"", Edad = null ], [ Nombre = ""Esteban"", Edad = null ] } ) " ,
+
+                Code = 
+                "Table.RemoveEmptyColumns ( Datos )",
+
+                Result = 
+                "Table.FromRecords ( { [ Nombre = ""Mónica"" ], [ Nombre = ""Esteban"" ] } )" 
+            ],
+            [
+                Description = 
+                "Remover las columnas vacías de la tabla almacenada en la variale 
+                Datos con el método de transposición para poca cantidades de filas: 
+                Table.FromRecords ( { [ Nombre = ""Mónica"", Edad = null ], [ Nombre = ""Esteban"", Edad = null ] } ) " ,
+
+                Code = 
+                "Table.RemoveEmptyColumns ( Datos, 2 )",
+
+                Result = 
+                "Table.FromRecords ( { [ Nombre = ""Mónica"" ], [ Nombre = ""Esteban"" ] } )" 
+            ],
+            [
+                Description = 
+                "Remover las columnas vacías de la tabla almacenada en la variale 
+                Datos con el método basado en sólo nombres de columnas: 
+                Table.FromRecords ( { [ Nombre = ""Mónica"", Columna2 = null ], [ Nombre = ""Esteban"", Columna2 = null ] } ) " ,
+
+                Code = 
+                "Table.RemoveEmptyColumns ( Datos, 3 )",
+
+                Result = 
+                "Table.FromRecords ( { [ Nombre = ""Mónica"" ], [ Nombre = ""Esteban"" ] } )" 
+            ]                           
+        },
+        Documentation.Category = 
+        "Table",
+
+        Documentation.Source = 
+        "Local",
+
+        Documentation.Author = 
+        "Miguel Caballero de: www.ExcelFreeBlog.Com 
+        para PowerQuery.Zone"        
+    ]
+
+
+in
+    Value.ReplaceType (
+        Funcion, 
+        Documentacion 
+    )

@@ -1,0 +1,62 @@
+
+// Desarrollado por: Miguel Caballero & Fabian Torres: https://www.excelfreeblog.com/
+let
+    Funcion =
+    ( ResultadoAgregado as table) as any => 
+    let
+        ColumnaDuracionALista =
+        ResultadoAgregado[Exclusive Duration],
+
+        Suma = 
+        List.Sum ( ColumnaDuracionALista ),
+
+        RegistroConDetalles = 
+        Duration.ToRecord( Suma )
+
+    in
+        RegistroConDetalles,
+
+    Documentacion =
+    type function 
+    ( 
+        ResultadoAgregado as table
+    ) as list meta
+    
+    [
+        Documentation.Name = 
+        "Record.QueryExecutionFromDiagnostice",
+
+        Documentation.LongDescription = 
+        "Devuelve el tiempo que tarda en ejecutarse una consulta
+         según el resultado agregado del diagnósitico de consulta.
+
+        Creado por: | EXCELFREEBLOG.COM | para POWERQUERY.ZONE",
+
+        Documentation.Examples = 
+        {
+            [
+                Description = 
+                "" ,
+
+                Code = 
+                "",
+
+                Result = 
+                "" 
+            ]            
+        },
+        Documentation.Category = 
+        "Record",
+
+        Documentation.Source = 
+        "Local",
+
+        Documentation.Author = 
+        "Miguel Caballero & Fabian Torres de: www.ExcelFreeBlog.Com"     
+    ]
+
+in
+    Value.ReplaceType (
+        Funcion, 
+        Documentacion 
+    )

@@ -1,0 +1,258 @@
+
+// Desarrollado por: Miguel Caballero & Fabian Torres: https://www.excelfreeblog.com/
+// Contribución de: Odel Leal.
+let
+    Funcion =
+    ( 
+        Nombre as text, 
+        optional ApellidoPrimero as logical, 
+        optional PrimeraPreposicion as list, 
+        optional SegundaPreposicion as list, 
+        optional TerceraPreposicion as list 
+    ) as list =>
+
+    let
+
+        apellidopimero =
+        if 
+            ApellidoPrimero = null 
+        then 
+            false 
+        else 
+            ApellidoPrimero,
+
+
+        primerapreposicion =
+        if 
+            PrimeraPreposicion = null 
+        then 
+            { "de", "del", "los", "las", "la", "lo", "san", "vda.", "y", "mac", "mc" } 
+        else 
+            PrimeraPreposicion,
+
+
+        segundapreposicion =
+        if 
+            SegundaPreposicion = null 
+        then 
+            { "de", "del", "los", "las", "la", "lo", "san", "vda.", "y", "mac", "mc" } 
+        else 
+            SegundaPreposicion,
+
+
+        tercerapreposicion = 
+        if 
+            TerceraPreposicion = null 
+        then 
+            { "de", "del", "los", "las", "la", "lo", "san", "vda.", "y", "mac", "mc" }
+        else 
+            TerceraPreposicion,
+
+
+        Nombreenlista =
+        Text.SplitAny ( Nombre, " " ),
+
+        NombreFinal =
+        CicloDeReordenacion ( Nombreenlista, 1 ),
+
+        CicloDeReordenacion =
+        ( NombreEnLista as list, x as number ) as list =>
+        if
+            x > 3
+        then
+            NombreEnLista
+        else
+            let
+                ppp = 
+                List.Min (
+                    List.PositionOfAny (
+                        NombreEnLista,
+                        primerapreposicion,
+                        2,
+                        Comparer.FromCulture ( Culture.Current , true )
+                    )
+                ),
+
+                ParteCompuesta = 
+                try
+                    if
+                        List.Contains (
+                            segundapreposicion,
+                            NombreEnLista{ ppp + 1 },
+                            Comparer.FromCulture ( Culture.Current , true )
+                        )
+                            and     List.Contains (
+                                        {"de", "del", "las", "los", "lo", "la", "y"},
+                                        NombreEnLista { ppp + 2 },
+                                        Comparer.FromCulture ( Culture.Current , true )
+                                    )
+                    then
+                        { 
+                            NombreEnLista{ ppp } 
+                                & " " 
+                                & NombreEnLista{ ppp + 1 } 
+                                & " " 
+                                & NombreEnLista{ ppp + 2 } 
+                                & " " 
+                                & NombreEnLista { ppp + 3 } 
+                        }
+                    else if
+                        List.Contains (
+                            segundapreposicion,
+                            NombreEnLista{ ppp + 1 },
+                            Comparer.FromCulture ( Culture.Current , true )
+                        )
+                    then            
+                        { 
+                            NombreEnLista{ ppp } 
+                            & " " 
+                            & NombreEnLista{ ppp + 1 } 
+                            & " " 
+                            & NombreEnLista{ ppp + 2 } 
+                        }
+                    else
+                        { 
+                            NombreEnLista{ ppp } 
+                            & " " 
+                            & NombreEnLista{ ppp + 1 } 
+                        }
+                otherwise
+                {},
+
+                NombreSimples = 
+                List.Difference (
+                    NombreEnLista,
+                    Text.SplitAny ( Text.Combine( { ParteCompuesta{0}? } ), " " ) 
+                ),
+
+                Reordenacion =
+                List.InsertRange(
+                    NombreSimples,
+                    if ppp is null then 0 else ppp,
+                    ParteCompuesta
+                )
+            in
+                @CicloDeReordenacion ( Reordenacion, x + 1 ),
+
+            Final =
+            if 
+                ApellidoPrimero = true 
+            then 
+                if 
+                    List.Count ( NombreFinal ) = 3 
+                then 
+                    List.InsertRange (
+                        NombreFinal,
+                        3,
+                        { null } 
+                    ) 
+                else 
+                    if 
+                        List.Count ( NombreFinal ) < 3 
+                    then 
+                        List.InsertRange (
+                            NombreFinal,
+                            1,
+                            { null } 
+                        )
+                    else 
+
+                        NombreFinal
+                else 
+                    if 
+                        List.Count ( NombreFinal ) <= 3 
+                    then 
+                        List.InsertRange (
+                            NombreFinal,
+                            1,
+                            { null } 
+                        )
+                    else 
+                        NombreFinal 
+        
+    in
+        Final,
+        
+    Documentacion =
+    type function 
+    ( 
+        Nombre as text, 
+        optional ApellidoPrimero as logical, 
+        optional PrimeraPreposicion as list, 
+        optional SegundaPreposicion as list, 
+        optional TerceraPreposicion as list 
+    ) as list meta
+    
+    [
+        Documentation.Name = 
+        "Splitter.SplitByCompoundName",
+
+        Documentation.LongDescription = 
+        "Devuelve una función que divide el texto proporcionado con un nombres 
+        y/o apellidos compuesto en una lista, donde cada elemento es un nombre 
+        o apellido (manteniendo las preposiciones en el lugar correspondiente). 
+        Las preposiciones por defecto son del idioma Español, aunque se puede 
+        recurrir a sus argumentos opcionales para indicar otras preposiciones, 
+        así como señalar si primero van los nombres o los apellidos.
+
+        Creado por: | EXCELFREEBLOG.COM | para POWERQUERY.ZONE,
+        Miguel Caballero & Fabian Torres, contribución de Odel Leal.",
+
+        Documentation.Examples = 
+        {
+            [
+                Description = 
+                "Dividir el nombre: ""Alejandra de las Mercedez Palomina Rocha"" " ,
+
+                Code = 
+                "Splitter.SplitByCompoundName ( ""Alejandra de las Mercedez Palomina Rocha"" )",
+
+                Result = 
+                "{ Alejandra, de las Mercedez, Palomina, Rocha }" 
+            ],
+            [
+                Description = 
+                "Dividir el nombre: ""Rocamora de las Morenas Tatiana de los Milagros"". 
+                Al iniciar con los apellidos se debe recurrir al segundo argumento 
+                indicando true " ,
+
+                Code = 
+                "Splitter.SplitByCompoundName ( 
+                    ""Rocamora de las Morenas Tatiana de los Milagros"",
+                    true
+                )",
+
+                Result = 
+                "{ Rocamora, de las Morenas, Tatiana, de los Milagros }" 
+            ],
+                        
+            [
+                Description = 
+                "Para más ejemplos aplicados
+                con implementación a tablas y
+                con el resto de argumentos, visita:" ,
+
+                Code = 
+                " POWERQUERY.ZONE/NOMBRES-COMPUESTOS ",
+
+                Result = 
+                "" 
+            ]             
+        },
+        Documentation.Category = 
+        "Splitter",
+
+        Documentation.Source = 
+        "Local",
+
+        Documentation.Version = " 1.0 ",
+
+        Documentation.Author = 
+        "Miguel Caballero & Fabian Torres de: www.ExcelFreeBlog.Com 
+        para PowerQuery.Zone con contribución de Odel Leal"        
+    ]        
+in
+    Value.ReplaceType (
+        Funcion, 
+        Documentacion 
+    )
